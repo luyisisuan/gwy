@@ -1,6 +1,6 @@
 // --- script.js (Revamped - setupCardAnimation call removed) ---
 
-document.addEventListener('DOMContentLoaded', () => {
+document。addEventListener('DOMContentLoaded', () => {
     // --- 配置项 ---
     const config = {
         estimatedRegDate: '2025-10-15',
