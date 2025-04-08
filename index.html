@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>备考智能驾驶舱 | 段绪程</title>
+    <!-- Font Awesome CDN (for icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- 链接外部 CSS 文件 -->
+    <link rel="stylesheet" href="/css/gwy.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- ==== Sidebar Navigation ==== -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-rocket logo-icon"></i>
+                <span class="logo-text">备考舱</span>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#dashboard" class="nav-link active" data-target="dashboard-section"><i class="fas fa-tachometer-alt fa-fw"></i><span>仪表盘</span></a></li>
+                    <li><a href="#timeline" class="nav-link" data-target="timeline-section"><i class="fas fa-stream fa-fw"></i><span>备考轴</span></a></li>
+                    <li><a href="#course-tracker" class="nav-link" data-target="course-tracker-section"><i class="fas fa-book-reader fa-fw"></i><span>课程追踪</span></a></li>
+                    <li><a href="#pomodoro" class="nav-link" data-target="pomodoro-section"><i class="fas fa-stopwatch-20 fa-fw"></i><span>番茄钟</span></a></li>
+                    <li><a href="#notes" class="nav-link" data-target="notes-section"><i class="fas fa-pencil-alt fa-fw"></i><span>备考笔记</span></a></li>
+                    <li><a href="#resources" class="nav-link" data-target="resources-section"><i class="fas fa-link fa-fw"></i><span>资源库</span></a></li>
+                    <!-- <li><a href="#settings" class="nav-link" data-target="settings-section"><i class="fas fa-cog fa-fw"></i><span>设置</span></a></li> -->
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <span id="current-time">--:--:--</span>
+                <p>© 2024 段绪程</p>
+            </div>
+        </aside>
+
+        <!-- ==== Main Content Area ==== -->
+        <main class="main-content">
+            <!-- == Section: Dashboard (Combined Info & Countdown) == -->
+            <section id="dashboard-section" class="content-section active-section">
+                <header class="section-header">
+                    <h1><i class="fas fa-tachometer-alt icon-gradient"></i> 仪表盘概览</h1>
+                    <p>欢迎回来，段绪程！</p>
+                </header>
+
+                <!-- User Info Card (Integrated) -->
+                <div class="info-highlight-card">
+                    <div class="info-item">
+                        <i class="fas fa-user-graduate"></i>
+                        <div>
+                            <strong>考生:</strong> 段绪程 (中南林业科大 - 软件工程)<br>
+                            <strong>毕业:</strong> 预计 2026 | <strong>身份:</strong> 中共预备党员
+                        </div>
+                    </div>
+                    <div class="info-item countdown-display">
+                        <i class="fas fa-flag-checkered"></i>
+                        <div>
+                            <strong>目标:</strong> 2025下半年 公务员考试<br>
+                            <span class="countdown-text">
+                                距报名约: <strong id="countdown-days-reg-main">...</strong> 天 |
+                                距笔试约: <strong id="countdown-days-exam-main">...</strong> 天
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Progress Summary (Placeholder - can be dynamic later) -->
+                <h2><i class="fas fa-chart-line icon-gradient"></i> 关键进度摘要</h2>
+                <div class="progress-summary-grid">
+                     <div class="summary-card">
+                        <i class="fas fa-tasks"></i>
+                        <span class="summary-value" id="summary-tasks-completed">0 / 0</span>
+                        <span class="summary-label">阶段任务完成</span>
+                    </div>
+                    <div class="summary-card">
+                        <i class="fas fa-book-open"></i>
+                         <span class="summary-value" id="summary-course-progress">0%</span>
+                        <span class="summary-label">课程学习进度</span>
+                    </div>
+                    <div class="summary-card">
+                        <i class="fas fa-fire"></i>
+                         <span class="summary-value" id="summary-pomodoro-count">0</span>
+                        <span class="summary-label">今日专注次数</span>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- == Section: Timeline == -->
+            <section id="timeline-section" class="content-section">
+                 <header class="section-header">
+                    <h1><i class="fas fa-stream icon-gradient"></i> 备考时间轴</h1>
+                    <p>按计划推进，稳步提升。</p>
+                </header>
+
+                <div class="accordion">
+                    <!-- Phase 1 Accordion Item -->
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">
+                            <i class="fas fa-layer-group phase-icon phase-1"></i>
+                            <span>基础夯实阶段 (当前 - 2025.上半年)</span>
+                            <i class="fas fa-chevron-down arrow-icon"></i>
+                            <div class="progress-bar-container inline-progress">
+                                <div class="progress-bar mini">
+                                    <div class="progress-fill mini" id="progress-phase1-bar"></div>
+                                </div>
+                                <span class="progress-percentage mini" id="progress-phase1-percent">0%</span>
+                            </div>
+                        </button>
+                        <div class="accordion-content">
+                            <ul class="task-list">
+                                <!-- Task items moved here from previous HTML -->
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase1-1" data-group="phase1"><label class="task-label" for="task-phase1-1">系统学习行测五大模块基础知识与方法论</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase1-2" data-group="phase1"><label class="task-label" for="task-phase1-2">掌握申论基本题型作答思路</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase1-3" data-group="phase1"><label class="task-label" for="task-phase1-3">开始分模块专项练习（注重理解）</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase1-4" data-group="phase1"><label class="task-label" for="task-phase1-4">持续关注时事政治（学习强国/官媒）</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase1-5" data-group="phase1"><label class="task-label" for="task-phase1-5">加强中共党史、理论学习</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase1-6" data-group="phase1"><label class="task-label" for="task-phase1-6">初步研究往年职位表，思考方向</label></li>
+                            </ul>
+                             <div class="phase-notes">
+                                <label for="notes-phase1" class="notes-label">阶段笔记:</label>
+                                <textarea id="notes-phase1" class="notes-textarea" placeholder="记录本阶段的想法、难点、计划..."></textarea>
+                             </div>
+                        </div>
+                    </div>
+                    <!-- Phase 2 Accordion Item -->
+                    <div class="accordion-item">
+                         <button class="accordion-header" aria-expanded="false">
+                            <i class="fas fa-cogs phase-icon phase-2"></i>
+                            <span>强化训练阶段 (2025.暑假)</span>
+                            <i class="fas fa-chevron-down arrow-icon"></i>
+                            <div class="progress-bar-container inline-progress">
+                                <div class="progress-bar mini">
+                                    <div class="progress-fill mini" id="progress-phase2-bar"></div>
+                                </div>
+                                <span class="progress-percentage mini" id="progress-phase2-percent">0%</span>
+                            </div>
+                        </button>
+                         <div class="accordion-content">
+                             <ul class="task-list">
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase2-1" data-group="phase2"><label class="task-label" for="task-phase2-1">高强度、系统性刷题训练 (行测+申论)</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase2-2" data-group="phase2"><label class="task-label" for="task-phase2-2">进行套题模拟，严格控时</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase2-3" data-group="phase2"><label class="task-label" for="task-phase2-3">重点攻克弱项模块/题型，分析错题</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase2-4" data-group="phase2"><label class="task-label" for="task-phase2-4">加强申论写作练习 (大作文+应用文)</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase2-5" data-group="phase2"><label class="task-label" for="task-phase2-5">整理常识体系和申论素材库</label></li>
+                             </ul>
+                              <div class="phase-notes">
+                                <label for="notes-phase2" class="notes-label">阶段笔记:</label>
+                                <textarea id="notes-phase2" class="notes-textarea" placeholder="记录本阶段的想法、难点、计划..."></textarea>
+                             </div>
+                        </div>
+                    </div>
+                     <!-- Phase 3 Accordion Item -->
+                     <div class="accordion-item">
+                         <button class="accordion-header" aria-expanded="false">
+                            <i class="fas fa-flag-checkered phase-icon phase-3"></i>
+                            <span>冲刺模考阶段 (2025.考前1-2月)</span>
+                            <i class="fas fa-chevron-down arrow-icon"></i>
+                            <div class="progress-bar-container inline-progress">
+                                <div class="progress-bar mini">
+                                    <div class="progress-fill mini" id="progress-phase3-bar"></div>
+                                </div>
+                                <span class="progress-percentage mini" id="progress-phase3-percent">0%</span>
+                            </div>
+                        </button>
+                         <div class="accordion-content">
+                             <ul class="task-list">
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase3-1" data-group="phase3"><label class="task-label" for="task-phase3-1">以历年真题和高质量模拟题进行全真模考</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase3-2" data-group="phase3"><label class="task-label" for="task-phase3-2">查漏补缺，回归基础，巩固高频考点</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase3-3" data-group="phase3"><label class="task-label" for="task-phase3-3">强化记忆常识关键信息和申论热点</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase3-4" data-group="phase3"><label class="task-label" for="task-phase3-4">调整作息，模拟考试时间，保持心态</label></li>
+                                <li class="task-item"><input type="checkbox" class="task-checkbox" id="task-phase3-5" data-group="phase3"><label class="task-label" for="task-phase3-5">关注最终公告和职位表，确认报考岗位</label></li>
+                             </ul>
+                            <div class="phase-notes">
+                                <label for="notes-phase3" class="notes-label">阶段笔记:</label>
+                                <textarea id="notes-phase3" class="notes-textarea" placeholder="记录本阶段的想法、难点、计划..."></textarea>
+                             </div>
+                        </div>
+                    </div>
+                </div> <!-- End Accordion -->
+            </section>
+
+             <!-- == Section: Course Tracker == -->
+            <section id="course-tracker-section" class="content-section">
+                <header class="section-header">
+                    <h1><i class="fas fa-book-reader icon-gradient"></i> 在线课程追踪</h1>
+                    <p>记录并跟进你的网课进度。</p>
+                </header>
+                <div class="card course-tracker-card"> <!-- Wrap in a card for styling consistency -->
+                     <div class="course-info">
+                        <p><strong>课程:</strong> <span id="course-name">100元红鲶定金班 (华图)</span></p>
+                        <p><a id="course-link" href="https://www.huatu.com/htzx/user/index.shtml#/courseDetail/KCZF464FO6/100%E5%85%83%E7%BA%A2%E9%B2%A4%E5%AE%9A%E9%87%91%E7%8F%AD?orderCode=" target="_blank" class="resource-link"><i class="fas fa-external-link-alt"></i> 访问课程</a></p>
+                    </div>
+                     <div class="course-progress-inputs">
+                        <div class="input-group">
+                            <label for="course-total-lessons">总节数:</label>
+                            <input type="number" id="course-total-lessons" class="input-narrow" min="1" value="1" placeholder="总数">
+                        </div>
+                        <div class="input-group">
+                            <label for="course-completed-lessons">已完成:</label>
+                            <input type="number" id="course-completed-lessons" class="input-narrow" min="0" value="0" placeholder="完成数">
+                        </div>
+                         <div class="input-group progress-display">
+                             <span>进度:</span>
+                             <span id="course-progress-percentage" class="progress-percentage">0%</span>
+                         </div>
+                    </div>
+                     <div class="progress-bar-container course-progress-bar-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="course-progress-bar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <div class="course-notes">
+                        <label for="notes-course" class="notes-label">课程笔记:</label>
+                        <textarea id="notes-course" class="notes-textarea" placeholder="记录本课程的学习要点、疑问..."></textarea>
+                         <span id="course-notes-status" class="notes-status-text small"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- == Section: Pomodoro Timer == -->
+            <section id="pomodoro-section" class="content-section">
+                <header class="section-header">
+                     <h1><i class="fas fa-stopwatch-20 icon-gradient"></i> 专注番茄钟</h1>
+                     <p>利用番茄工作法保持高效专注。</p>
+                </header>
+                <div class="card pomodoro-card"> <!-- Wrap in a card -->
+                    <div class="pomodoro-timer">
+                        <div class="timer-display-wrapper">
+                            <div class="timer-circle">
+                                <svg class="timer-progress-ring" height="200" width="200">
+                                     <circle class="timer-progress-ring__bg" stroke-width="8" fill="transparent" r="90" cx="100" cy="100"/>
+                                     <circle class="timer-progress-ring__fg" stroke-width="8" fill="transparent" r="90" cx="100" cy="100"/>
+                                </svg>
+                                <div class="timer-time-content">
+                                    <span id="timer-mode">工作</span>
+                                    <span id="timer-time">25:00</span>
+                                </div>
+                             </div>
+                        </div>
+                        <div class="timer-controls">
+                            <button id="timer-start" class="btn btn-success"><i class="fas fa-play"></i> 开始</button>
+                            <button id="timer-pause" class="btn btn-warning" disabled><i class="fas fa-pause"></i> 暂停</button>
+                            <button id="timer-reset" class="btn btn-danger"><i class="fas fa-redo-alt"></i> 重置</button>
+                        </div>
+                         <div class="timer-settings accordion"> <!-- Make settings collapsible -->
+                             <div class="accordion-item settings-accordion">
+                                 <button class="accordion-header settings-header" aria-expanded="false">
+                                     <i class="fas fa-cog"></i>
+                                     <span>时长设置</span>
+                                      <i class="fas fa-chevron-down arrow-icon"></i>
+                                 </button>
+                                 <div class="accordion-content settings-content">
+                                     <div class="input-group">
+                                         <label for="work-duration">工作:</label>
+                                         <input type="number" id="work-duration" min="1" value="25"> 分钟
+                                     </div>
+                                     <div class="input-group">
+                                        <label for="short-break-duration">短休:</label>
+                                        <input type="number" id="short-break-duration" min="1" value="5"> 分钟
+                                     </div>
+                                     <div class="input-group">
+                                        <label for="long-break-duration">长休:</label>
+                                        <input type="number" id="long-break-duration" min="1" value="15"> 分钟
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- == Section: Notes == -->
+            <section id="notes-section" class="content-section">
+                 <header class="section-header">
+                     <h1><i class="fas fa-pencil-alt icon-gradient"></i> 备考笔记</h1>
+                     <p>随时记录你的想法和待办事项。</p>
+                </header>
+                 <div class="card notes-card"> <!-- Wrap in a card -->
+                    <textarea id="notes-general" class="notes-textarea large" placeholder="记录总体学习心得、待办事项、重要提醒..."></textarea>
+                     <div class="notes-actions">
+                         <button id="save-notes-btn" class="btn btn-primary"><i class="fas fa-save"></i> 手动保存</button>
+                         <span id="notes-status" class="notes-status-text"></span>
+                    </div>
+                 </div>
+            </section>
+
+            <!-- == Section: Resources == -->
+            <section id="resources-section" class="content-section">
+                <header class="section-header">
+                     <h1><i class="fas fa-link icon-gradient"></i> 资源库</h1>
+                     <p>常用的学习网站和资料链接。</p>
+                </header>
+                 <div class="card resources-card"> <!-- Wrap in a card -->
+                    <div class="resource-grid">
+                         <a href="http://www.scs.gov.cn/" target="_blank" class="resource-item">
+                            <i class="fas fa-landmark"></i>
+                            <span>国家公务员局官网</span>
+                        </a>
+                        <a href="http://rsks.hunan.gov.cn/" target="_blank" class="resource-item">
+                             <i class="fas fa-building"></i>
+                            <span>湖南省人事考试网</span>
+                        </a>
+                         <a href="https://www.xuexi.cn/" target="_blank" class="resource-item">
+                             <i class="fas fa-book"></i>
+                            <span>学习强国 (时政)</span>
+                        </a>
+                        <a href="http://paper.people.com.cn/rmrb/index.html" target="_blank" class="resource-item">
+                             <i class="far fa-newspaper"></i>
+                            <span>人民日报 (评论)</span>
+                        </a>
+                        <!-- Add more or make dynamic later -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- == Section: Settings (Placeholder) == -->
+            <!--
+            <section id="settings-section" class="content-section">
+                 <header class="section-header">
+                    <h1><i class="fas fa-cog icon-gradient"></i> 应用设置</h1>
+                </header>
+                <div class="card settings-card">
+                    <p>设置功能待开发...</p>
+                    <p>可在此处添加主题切换、考试日期修改等功能。</p>
+                </div>
+            </section>
+            -->
+
+        </main> <!-- End Main Content -->
+    </div> <!-- End App Container -->
+
+    <!-- 链接外部 JavaScript 文件 -->
+    <script src="/js/gwy.js" defer></script>
+</body>
+</html>
