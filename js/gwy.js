@@ -1,6 +1,7 @@
-// --- script.js (Revamped - setupCardAnimation call removed) ---
+// --- script.js (Revamped - Corrected) ---
 
-document。addEventListener('DOMContentLoaded',() => {
+// Wrap the entire script in ONE DOMContentLoaded listener
+document.addEventListener('DOMContentLoaded', () => { // Correct comma here
     // --- 配置项 ---
     const config = {
         estimatedRegDate: '2025-10-15',
@@ -110,7 +111,7 @@ document。addEventListener('DOMContentLoaded',() => {
 
         const isOpen = header.getAttribute('aria-expanded') === 'true';
 
-        // Close other open items in the same accordion (optional)
+        // Optional: Close other open items in the same accordion
         // const accordion = item.closest('.accordion');
         // if (accordion && !isOpen) { // Only close others when opening a new one
         //     accordion.querySelectorAll('.accordion-item .accordion-header[aria-expanded="true"]').forEach(openHeader => {
@@ -119,7 +120,6 @@ document。addEventListener('DOMContentLoaded',() => {
         //         }
         //     });
         // }
-
 
         header.setAttribute('aria-expanded', !isOpen);
         if (!isOpen) {
@@ -134,13 +134,14 @@ document。addEventListener('DOMContentLoaded',() => {
         } else {
             // Closing
             content.style.maxHeight = '0';
+            // Use transitionend event to handle cleanup after transition
             content.addEventListener('transitionend', () => {
                 // Check again if it's still closed before removing class/display
                  if (header.getAttribute('aria-expanded') === 'false') {
                      content.classList.remove('open');
                      content.style.display = ''; // Reset display property after closing fully
                  }
-            }, { once: true });
+            }, { once: true }); // Important: { once: true } ensures the listener is removed after firing
         }
     }
 
@@ -173,6 +174,7 @@ document。addEventListener('DOMContentLoaded',() => {
                 return JSON.parse(savedData);
             } catch (e) {
                 console.error(`Error parsing data for key ${key}:`, e);
+                // Optional: Clear invalid data
                 localStorage.removeItem(key);
             }
         }
@@ -199,13 +201,19 @@ document。addEventListener('DOMContentLoaded',() => {
     // Countdown
     function updateCountdownDisplay() {
         try {
-            const now = new Date(); now.setHours(0, 0, 0, 0);
+            const now = new Date(); now.setHours(0, 0, 0, 0); // Set time to start of day for accurate day difference
             const regDate = new Date(config.estimatedRegDate); regDate.setHours(0, 0, 0, 0);
             const examDate = new Date(config.estimatedExamDate); examDate.setHours(0, 0, 0, 0);
-            if (isNaN(regDate.getTime()) || isNaN(examDate.getTime())) throw new Error('Invalid date format');
-            const msPerDay = 86400000;
+
+            // Check if dates are valid after creation
+            if (isNaN(regDate.getTime()) || isNaN(examDate.getTime())) {
+                throw new Error('Invalid date format in config');
+            }
+
+            const msPerDay = 86400000; // 1000 * 60 * 60 * 24
             const daysToReg = Math.max(0, Math.ceil((regDate - now) / msPerDay));
             const daysToExam = Math.max(0, Math.ceil((examDate - now) / msPerDay));
+
             updateElementText(countdownRegMain, daysToReg);
             updateElementText(countdownExamMain, daysToExam);
         } catch (e) {
@@ -219,11 +227,12 @@ document。addEventListener('DOMContentLoaded',() => {
     function loadTaskProgress() {
         const progressData = loadData(config.localStorageKeys.progress, { checkboxes: {} });
         allCheckboxes.forEach(cb => {
+            // Use optional chaining and nullish coalescing for safety
             cb.checked = progressData.checkboxes?.[cb.id] ?? false;
             updateLabelStyle(cb);
         });
         console.log('Task progress loaded.');
-        updateAllPhaseProgressBars();
+        updateAllPhaseProgressBars(); // Ensure progress bars are updated after loading
     }
 
     function saveTaskProgress() {
@@ -234,15 +243,16 @@ document。addEventListener('DOMContentLoaded',() => {
     }
 
     function updateLabelStyle(checkbox) {
-        const label = checkbox.nextElementSibling; // Assuming label is direct sibling
+        // Try finding the label as the next sibling first (common pattern)
+        const label = checkbox.nextElementSibling;
         if (label && label.tagName === 'LABEL') {
-             // Find parent task item if needed for styling
+             // Find parent task item for overall styling (like strikethrough)
              const taskItem = checkbox.closest('.task-item');
              if (taskItem) {
                  taskItem.classList.toggle('completed', checkbox.checked);
              }
         } else {
-             // Fallback if label is not direct sibling (less reliable)
+             // Fallback: If label is not the direct sibling, try finding it using 'for' attribute
              const fallbackLabel = document.querySelector(`label[for="${checkbox.id}"]`);
              if (fallbackLabel) {
                  const taskItem = fallbackLabel.closest('.task-item');
@@ -253,88 +263,128 @@ document。addEventListener('DOMContentLoaded',() => {
 
 
     function updatePhaseProgressBar(groupId) {
+        if (!groupId) return 0; // Avoid errors if data-group is missing
         const groupCheckboxes = document.querySelectorAll(`.task-checkbox[data-group="${groupId}"]`);
         const total = groupCheckboxes.length;
-        if (total === 0) return 0;
+        if (total === 0) return 0; // Avoid division by zero
+
         const completed = Array.from(groupCheckboxes).filter(cb => cb.checked).length;
         const percentage = Math.round((completed / total) * 100);
+
         const bar = document.getElementById(`progress-${groupId}-bar`);
         const percentText = document.getElementById(`progress-${groupId}-percent`);
+
         if (bar) bar.style.width = `${percentage}%`;
         if (percentText) updateElementText(percentText, `${percentage}%`);
-        return percentage;
+
+        return percentage; // Return the calculated percentage
     }
 
     function updateAllPhaseProgressBars() {
-        let totalTasks = 0;
-        let completedTasks = 0;
-        const groupIds = new Set(Array.from(allCheckboxes).map(cb => cb.dataset.group).filter(Boolean));
+        let totalTasksOverall = 0;
+        let completedTasksOverall = 0;
+
+        // Get unique group IDs from the checkboxes that have the data-group attribute
+        const groupIds = new Set(
+            Array.from(allCheckboxes)
+                 .map(cb => cb.dataset.group)
+                 .filter(Boolean) // Filter out undefined/empty values
+        );
+
         groupIds.forEach(id => {
-            updatePhaseProgressBar(id);
-            // Recalculate for summary
+            updatePhaseProgressBar(id); // Update individual bar
+
+            // Recalculate counts for the summary (more reliable than summing percentages)
             const groupCheckboxes = document.querySelectorAll(`.task-checkbox[data-group="${id}"]`);
-            totalTasks += groupCheckboxes.length;
-            completedTasks += Array.from(groupCheckboxes).filter(cb => cb.checked).length;
+            totalTasksOverall += groupCheckboxes.length;
+            completedTasksOverall += Array.from(groupCheckboxes).filter(cb => cb.checked).length;
         });
-         // Update summary directly here
-         updateElementText(summaryTasks, `${completedTasks} / ${totalTasks}`);
-        console.log('Phase progress bars updated.');
+
+         // Update dashboard summary Tasks text directly here
+         // Use totalTasksOverall and completedTasksOverall calculated above
+         updateElementText(summaryTasks, `${completedTasksOverall} / ${totalTasksOverall}`);
+
+        console.log('Phase progress bars and task summary updated.');
     }
 
 
     // Notes
     function loadNotesData() {
-        const notesData = loadData(config.localStorageKeys.notes);
+        const notesData = loadData(config.localStorageKeys.notes, {}); // Default to empty object
         noteTextareas.forEach(textarea => {
-            textarea.value = notesData[textarea.id] ?? '';
+            // Use optional chaining and nullish coalescing
+            textarea.value = notesData?.[textarea.id] ?? '';
         });
         console.log('Notes loaded.');
     }
 
     function saveSpecificNote(textarea) {
-        const notesData = loadData(config.localStorageKeys.notes);
+        // Load current notes data to update only the specific field
+        const notesData = loadData(config.localStorageKeys.notes, {});
         notesData[textarea.id] = textarea.value;
-        throttledSave(config.localStorageKeys.notes, () => notesData); // Throttle saving
-        // Show status (simplified)
+
+        // Use throttled save
+        throttledSave(config.localStorageKeys.notes, () => notesData);
+
+        // Show status indication (simplified, non-blocking)
         const statusEl = textarea.id === 'notes-course' ? courseNotesStatus : notesStatusElement;
-         // Show temporary status only if element exists
+
+         // Show temporary status only if element exists and is an element
          if (statusEl && statusEl.tagName) { // Basic check if it's an element
-             statusEl.textContent = '自动保存...'; statusEl.style.color = 'var(--text-light)';
-            // Clear status after a delay
-            setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 1500);
+             statusEl.textContent = '自动保存...'; statusEl.style.color = 'var(--text-light)'; // Or use a CSS class
+            // Clear status after a delay using a timer
+            setTimeout(() => {
+                // Check if the element still exists before clearing
+                const currentStatusEl = textarea.id === 'notes-course' ? courseNotesStatus : notesStatusElement;
+                if (currentStatusEl && currentStatusEl.textContent === '自动保存...') {
+                   currentStatusEl.textContent = '';
+                }
+            }, SAVE_THROTTLE_MS + 500); // Clear slightly after throttle duration
         }
     }
 
 
     function saveAllNotesNow() {
          const notesData = {};
-         noteTextareas.forEach(textarea => { notesData[textarea.id] = textarea.value; });
-         saveData(config.localStorageKeys.notes, notesData);
+         noteTextareas.forEach(textarea => {
+             notesData[textarea.id] = textarea.value;
+         });
+         saveData(config.localStorageKeys.notes, notesData); // Use immediate save
+
+         // Provide user feedback for manual save
          if (notesStatusElement) {
-             notesStatusElement.textContent = '笔记已保存!'; notesStatusElement.style.color = 'var(--success-color)';
+             notesStatusElement.textContent = '笔记已手动保存!';
+             notesStatusElement.style.color = 'var(--success-color)';
              setTimeout(() => { if (notesStatusElement) notesStatusElement.textContent = ''; }, 2000);
          }
-         // Give feedback on button too
+         // Also provide feedback on the button itself
          if (saveNotesButton) {
              saveNotesButton.innerHTML = `<i class="fas fa-check"></i> 保存成功!`;
+             saveNotesButton.disabled = true; // Briefly disable
              setTimeout(() => {
-                 if(saveNotesButton) saveNotesButton.innerHTML = `<i class="fas fa-save"></i> 手动保存`;
+                 if(saveNotesButton) {
+                     saveNotesButton.innerHTML = `<i class="fas fa-save"></i> 手动保存`;
+                     saveNotesButton.disabled = false;
+                 }
              }, 1500);
          }
+         console.log("All notes saved manually.");
     }
 
 
     // Course Tracker
     function loadCourseData() {
         const courseData = loadData(config.localStorageKeys.course, { total: '1', completed: '0', notes: '' });
-        if (courseTotalInput) courseTotalInput.value = courseData.total;
-        if (courseCompletedInput) courseCompletedInput.value = courseData.completed;
-        if (courseNotesTextarea) courseNotesTextarea.value = courseData.notes;
+        // Ensure elements exist before setting values
+        if (courseTotalInput) courseTotalInput.value = courseData.total || '1'; // Default if null/undefined
+        if (courseCompletedInput) courseCompletedInput.value = courseData.completed || '0';
+        if (courseNotesTextarea) courseNotesTextarea.value = courseData.notes || '';
         console.log('Course data loaded.');
-        updateCourseProgressDisplay();
+        updateCourseProgressDisplay(); // Update visuals after loading
     }
 
     function saveCourseData() {
+        // Ensure elements exist before reading values
         const courseData = {
             total: courseTotalInput?.value || '1',
             completed: courseCompletedInput?.value || '0',
@@ -346,169 +396,271 @@ document。addEventListener('DOMContentLoaded',() => {
 
 
     function updateCourseProgressDisplay() {
-        if (!courseTotalInput || !courseCompletedInput) return 0;
-        const total = parseInt(courseTotalInput.value) || 1;
+        if (!courseTotalInput || !courseCompletedInput) return 0; // Exit if elements don't exist
+
+        // Parse values safely, providing defaults
+        const total = parseInt(courseTotalInput.value) || 1; // Default to 1 to avoid division by zero if empty
         const completed = parseInt(courseCompletedInput.value) || 0;
+
+        // Clamp completed value between 0 and total
         const validCompleted = Math.max(0, Math.min(completed, total));
+
+        // Optional: Correct the input value if it was outside the valid range and not currently focused
         if (completed !== validCompleted && document.activeElement !== courseCompletedInput) {
             courseCompletedInput.value = validCompleted;
         }
+
+        // Calculate percentage, handle total <= 0 case
         const percentage = total > 0 ? Math.round((validCompleted / total) * 100) : 0;
+
+        // Update progress bar and text if elements exist
         if (courseProgressBar) courseProgressBar.style.width = `${percentage}%`;
         if (courseProgressPercent) updateElementText(courseProgressPercent, `${percentage}%`);
-        return percentage;
+
+        return percentage; // Return percentage for summary updates
     }
 
     // Pomodoro Timer
     function loadPomodoroSettings() {
         const settings = loadData(config.localStorageKeys.pomodoro, config.pomodoroDefaults);
-        if (workDurationInput) workDurationInput.value = settings.work;
-        if (shortBreakDurationInput) shortBreakDurationInput.value = settings.shortBreak;
-        if (longBreakDurationInput) longBreakDurationInput.value = settings.longBreak;
+        // Ensure elements exist before setting values
+        if (workDurationInput) workDurationInput.value = settings.work || config.pomodoroDefaults.work;
+        if (shortBreakDurationInput) shortBreakDurationInput.value = settings.shortBreak || config.pomodoroDefaults.shortBreak;
+        if (longBreakDurationInput) longBreakDurationInput.value = settings.longBreak || config.pomodoroDefaults.longBreak;
 
+        // Load and potentially reset Pomodoro count for the day
         const summaryData = loadData(config.localStorageKeys.summary, { pomodorosToday: 0, lastResetDate: null });
-        const today = new Date().toLocaleDateString();
+        const today = new Date().toLocaleDateString(); // Get date string in local format
+
         if(summaryData.lastResetDate === today) {
-            pomodorosToday = summaryData.pomodorosToday || 0; // Ensure it's a number
+            pomodorosToday = summaryData.pomodorosToday || 0; // Ensure it's a number, default to 0 if missing/invalid
         } else {
+            // If it's a new day (or first time running), reset the count
             pomodorosToday = 0;
-            saveSummaryData(); // Save the reset count
+            saveSummaryData(); // Save the reset count and new date immediately
         }
 
-        console.log("Pomodoro settings loaded.");
-        resetTimer(true); // Reset timer display with loaded/default values
+        console.log("Pomodoro settings and daily count loaded.");
+        resetTimer(true); // Reset timer display with loaded/default values (silent mode)
         updateDashboardSummary(); // Update summary after loading count
     }
 
 
     function savePomodoroSettings() {
          const settings = {
+            // Ensure values are taken from inputs if they exist, otherwise use defaults
             work: workDurationInput?.value || config.pomodoroDefaults.work,
             shortBreak: shortBreakDurationInput?.value || config.pomodoroDefaults.shortBreak,
             longBreak: longBreakDurationInput?.value || config.pomodoroDefaults.longBreak
         };
         saveData(config.localStorageKeys.pomodoro, settings);
-        if (!isTimerRunning) resetTimer(true); // Apply settings if timer stopped
+
+        // If the timer is not currently running, apply the new settings immediately by resetting
+        if (!isTimerRunning) {
+            resetTimer(true); // Reset silently to reflect new durations
+        }
+         console.log("Pomodoro settings saved.");
     }
 
      function updateTimerRing() {
-        if (!timerProgressRingFg) return;
+        if (!timerProgressRingFg || !timerCircumference) return; // Ensure elements and calculated values exist
+
+        // Calculate progress (0 to 1)
         const progress = timerTotalSeconds > 0 ? (timerTotalSeconds - timerSecondsRemaining) / timerTotalSeconds : 0;
-        const offset = timerCircumference * (1 - Math.min(1, Math.max(0, progress))); // Clamp progress 0-1
+
+        // Calculate the stroke-dashoffset. Offset starts at circumference (full ring) and moves towards 0 (empty ring)
+        // Clamp progress between 0 and 1 to avoid unexpected values
+        const offset = timerCircumference * (1 - Math.min(1, Math.max(0, progress)));
+
         timerProgressRingFg.style.strokeDashoffset = offset;
+
+        // Initialize stroke-dasharray if not already set (needed for the effect)
+        if (!timerProgressRingFg.style.strokeDasharray) {
+            timerProgressRingFg.style.strokeDasharray = timerCircumference;
+        }
     }
 
      function updateTimerDisplayAndRing() {
         const modeTextMap = { work: '工作', shortBreak: '短休', longBreak: '长休' };
-        updateElementText(timerModeDisplay, modeTextMap[currentMode] || '工作');
+        const currentModeText = modeTextMap[currentMode] || '工作'; // Default to '工作' if mode is unexpected
+
+        // Update mode text, time display, and timer ring SVG
+        updateElementText(timerModeDisplay, currentModeText);
         updateElementText(timerTimeDisplay, formatTime(timerSecondsRemaining));
         updateTimerRing();
-         if(pomodoroCard) pomodoroCard.dataset.mode = currentMode;
-        document.title = `${modeTextMap[currentMode]} | ${formatTime(timerSecondsRemaining)} - 备考舱`;
+
+        // Update the card's data attribute for potential styling based on mode
+        if(pomodoroCard) pomodoroCard.dataset.mode = currentMode;
+
+        // Update the page title to reflect the timer status
+        document.title = `${currentModeText} | ${formatTime(timerSecondsRemaining)} - 备考舱`;
     }
 
     function switchMode(newMode, showAlert = true) {
         currentMode = newMode;
-        if (newMode === 'work') {
-             // Increment counts ONLY if starting a fresh work cycle, not resuming
-             // This logic needs refinement if pause/resume shouldn't count
-             // Let's assume starting a new cycle increments counts
-             workCyclesCompleted++;
-             pomodorosToday++;
-             saveSummaryData();
-             updateDashboardSummary();
+        const modeTextMap = { work: '工作', shortBreak: '短休', longBreak: '长休' }; // Define inside or ensure accessible
+
+        // --- Important Logic: Increment counters ---
+        // Only increment pomodorosToday when a *work* cycle *completes* and we are switching *to* a break.
+        // The original logic incremented when switching *to* work, which is less standard for Pomodoro tracking.
+        // Let's adjust: Increment when a work cycle *finishes*.
+        // The check happens *before* setting the new duration.
+        if (previousMode === 'work' && (newMode === 'shortBreak' || newMode === 'longBreak')) {
+             workCyclesCompleted++; // Track cycles for long breaks
+             pomodorosToday++; // Track total Pomodoros for the day
+             saveSummaryData(); // Persist the updated count
+             updateDashboardSummary(); // Update the UI
+             console.log(`Pomodoro cycle ${pomodorosToday} completed.`);
         }
+
 
         let durationMinutes;
         switch (newMode) {
-            case 'shortBreak': durationMinutes = parseInt(shortBreakDurationInput.value) || config.pomodoroDefaults.shortBreak; break;
-            case 'longBreak': durationMinutes = parseInt(longBreakDurationInput.value) || config.pomodoroDefaults.longBreak; workCyclesCompleted = 0; break;
-            case 'work': default: durationMinutes = parseInt(workDurationInput.value) || config.pomodoroDefaults.work; break;
+            case 'shortBreak':
+                durationMinutes = parseInt(shortBreakDurationInput?.value || config.pomodoroDefaults.shortBreak);
+                break;
+            case 'longBreak':
+                durationMinutes = parseInt(longBreakDurationInput?.value || config.pomodoroDefaults.longBreak);
+                workCyclesCompleted = 0; // Reset cycle count after starting a long break
+                break;
+            case 'work':
+            default: // Default to work mode
+                durationMinutes = parseInt(workDurationInput?.value || config.pomodoroDefaults.work);
+                break;
         }
+
+        // Update timer state variables
         timerTotalSeconds = durationMinutes * 60;
         timerSecondsRemaining = timerTotalSeconds;
-        updateTimerDisplayAndRing();
+        isTimerRunning = false; // Ensure timer is stopped before potentially restarting
+
+        updateTimerDisplayAndRing(); // Update UI immediately for the new mode
 
         if (showAlert) {
-             // Replace alert with a less intrusive notification or sound if possible
-             console.log(`%c Pomo: ${modeTextMap[currentMode]} 时间到！现在开始 ${newMode === 'work' ? '工作' : '休息'}。`, 'color: blue; font-weight: bold;');
-             // Optional: Play a sound
-             // const audio = new Audio('path/to/sound.mp3'); audio.play();
+             // Use console log for less intrusive notification
+             console.log(`%c Pomo: 时间到！现在开始 ${modeTextMap[newMode]}。`, 'color: blue; font-weight: bold;');
+             // Optional: Play a notification sound
+             // try {
+             //     const audio = new Audio('path/to/notification.mp3'); // Replace with actual path or use a library
+             //     audio.play();
+             // } catch (e) { console.error("Failed to play notification sound:", e); }
+
+             // Optional: Browser Notification API (requires user permission)
+             // if (Notification.permission === "granted") {
+             //    new Notification("番茄钟", { body: `时间到！现在开始 ${modeTextMap[newMode]}。` });
+             // } else if (Notification.permission !== "denied") {
+             //    Notification.requestPermission().then(permission => {
+             //        if (permission === "granted") {
+             //            new Notification("番茄钟", { body: `时间到！现在开始 ${modeTextMap[newMode]}。` });
+             //        }
+             //    });
+             // }
         }
+         // Automatically start the timer for the new mode? Common Pomodoro behavior.
+         // startTimer(); // Uncomment if you want the next phase to start automatically
     }
 
+
      function startTimer() {
-        if (isTimerRunning) return;
+        if (isTimerRunning) return; // Prevent multiple intervals
+
         isTimerRunning = true;
-        setButtonState(startButton, true);
-        setButtonState(pauseButton, false);
-        setButtonState(resetButton, false);
+        setButtonState(startButton, true);  // Disable Start
+        setButtonState(pauseButton, false); // Enable Pause
+        setButtonState(resetButton, false); // Enable Reset (can reset while running)
 
-        // Ensure total seconds reflects current setting
-        timerTotalSeconds = (parseInt(
-             currentMode === 'work' ? workDurationInput.value :
-             currentMode === 'shortBreak' ? shortBreakDurationInput.value :
-             longBreakDurationInput.value
-         ) || config.pomodoroDefaults[currentMode]) * 60;
 
-         // If timer is at 0 or less, reset remaining time based on current mode before starting
+        // Re-calculate total seconds based on current mode settings *when starting*
+        let durationMinutes;
+         switch (currentMode) {
+             case 'shortBreak': durationMinutes = parseInt(shortBreakDurationInput?.value || config.pomodoroDefaults.shortBreak); break;
+             case 'longBreak': durationMinutes = parseInt(longBreakDurationInput?.value || config.pomodoroDefaults.longBreak); break;
+             case 'work': default: durationMinutes = parseInt(workDurationInput?.value || config.pomodoroDefaults.work); break;
+         }
+         timerTotalSeconds = durationMinutes * 60;
+
+
+         // If timer was paused at 0 or somehow negative, reset remaining time to full duration
          if(timerSecondsRemaining <= 0) {
              timerSecondsRemaining = timerTotalSeconds;
-             if(currentMode === 'work'){ // If starting work from 0, increment counters
-                 workCyclesCompleted++;
-                 pomodorosToday++;
-                 saveSummaryData();
-                 updateDashboardSummary();
-             }
+             // **Important**: Avoid double-counting pomodoros here. Counting happens in switchMode now.
          }
 
-        updateTimerDisplayAndRing(); // Update display immediately
+        updateTimerDisplayAndRing(); // Update display immediately before interval starts
+
+        console.log(`Timer started in ${currentMode} mode (${formatTime(timerSecondsRemaining)} remaining).`);
 
         timerInterval = setInterval(() => {
             timerSecondsRemaining--;
-            updateTimerDisplayAndRing();
+            updateTimerDisplayAndRing(); // Update UI every second
 
             if (timerSecondsRemaining < 0) {
                 clearInterval(timerInterval);
                 isTimerRunning = false;
-                setButtonState(startButton, false);
-                setButtonState(pauseButton, true);
-                const interval = config.pomodoroDefaults.longBreakInterval;
-                if (currentMode === 'work') {
-                    const nextBreak = (workCyclesCompleted % interval === 0 && workCyclesCompleted > 0) ? 'longBreak' : 'shortBreak';
-                    switchMode(nextBreak);
+                setButtonState(startButton, false); // Enable Start for next round
+                setButtonState(pauseButton, true);  // Disable Pause
+
+                const previousModeForSwitch = currentMode; // Store the mode that just finished
+                const longBreakInterval = config.pomodoroDefaults.longBreakInterval;
+
+                let nextMode;
+                if (previousModeForSwitch === 'work') {
+                    // Check if it's time for a long break (using the counter incremented in switchMode)
+                    // Note: workCyclesCompleted is incremented *after* a work session, before the break starts.
+                    // So, if it's now equal to the interval, the *next* break should be long.
+                    nextMode = (workCyclesCompleted > 0 && workCyclesCompleted % longBreakInterval === 0) ? 'longBreak' : 'shortBreak';
                 } else {
-                    switchMode('work'); // Switch back to work after any break
+                    // After any break (short or long), switch back to work
+                    nextMode = 'work';
                 }
+
+                switchMode(nextMode, true, previousModeForSwitch); // Pass previous mode to handle pomodoro count correctly
             }
         }, 1000);
     }
 
 
     function pauseTimer() {
-        if (!isTimerRunning) return;
-        clearInterval(timerInterval);
+        if (!isTimerRunning) return; // Do nothing if already paused
+
+        clearInterval(timerInterval); // Stop the interval
         isTimerRunning = false;
-        setButtonState(startButton, false);
-        setButtonState(pauseButton, true);
-         console.log("Timer paused.");
+        setButtonState(startButton, false); // Enable Start (to resume)
+        setButtonState(pauseButton, true);  // Disable Pause
+        // Reset button remains enabled
+         console.log(`Timer paused at ${formatTime(timerSecondsRemaining)} in ${currentMode} mode.`);
+         // Change title back to indicate paused state? Maybe not necessary.
     }
 
     function resetTimer(silent = false) {
-        clearInterval(timerInterval);
+        clearInterval(timerInterval); // Stop any active interval
         isTimerRunning = false;
-        const previousMode = currentMode;
+        const previousMode = currentMode; // Store mode before reset
         currentMode = 'work'; // Always reset TO work mode
-        // workCyclesCompleted = 0; // Decide if reset should clear cycle count? Maybe only after long break completes.
+
+        // Resetting the timer should arguably reset the work cycle count,
+        // unless the user specifically wants to preserve it across manual resets.
+        // Let's reset it for simplicity.
+        // workCyclesCompleted = 0; // Uncomment this line if reset should clear cycle count.
+
+        // Get the current work duration setting
         const durationMinutes = parseInt(workDurationInput?.value || config.pomodoroDefaults.work);
         timerTotalSeconds = durationMinutes * 60;
-        timerSecondsRemaining = timerTotalSeconds;
-        updateTimerDisplayAndRing(); // Update text and ring
-        setButtonState(startButton, false);
-        setButtonState(pauseButton, true);
-        setButtonState(resetButton, true); // Reset should be initially active
+        timerSecondsRemaining = timerTotalSeconds; // Reset remaining time to full duration
+
+        updateTimerDisplayAndRing(); // Update text, ring, and title
+
+        // Set button states for a fresh, ready-to-start timer
+        setButtonState(startButton, false); // Enable Start
+        setButtonState(pauseButton, true);  // Disable Pause (nothing to pause)
+        setButtonState(resetButton, true);  // Disable Reset initially? Or keep enabled? Let's keep enabled.
+
+        // Reset page title to default
         document.title = "备考智能驾驶舱 | 段绪程";
-        if(!silent) console.log(`Timer reset from ${previousMode} mode.`);
+
+        if(!silent) {
+            console.log(`Timer reset from ${previousMode} mode back to Work mode.`);
+        }
     }
 
 
@@ -516,24 +668,27 @@ document。addEventListener('DOMContentLoaded',() => {
     function saveSummaryData() {
          const summaryData = {
              pomodorosToday: pomodorosToday,
-             lastResetDate: new Date().toLocaleDateString()
+             lastResetDate: new Date().toLocaleDateString() // Store today's date string
          };
          saveData(config.localStorageKeys.summary, summaryData);
+         // No console log needed here usually, it's called internally
     }
 
 
     function updateDashboardSummary() {
-        // Tasks Summary - Recalculate here to ensure accuracy
+        // Tasks Summary - Recalculate here for accuracy or rely on updateAllPhaseProgressBars
+        // Let's recalculate to be safe, though updateAllPhaseProgressBars already updates the element.
         const totalTasks = allCheckboxes.length;
         const completedTasks = Array.from(allCheckboxes).filter(cb => cb.checked).length;
         updateElementText(summaryTasks, `${completedTasks} / ${totalTasks}`);
 
-        // Course Summary
-        const coursePercentage = updateCourseProgressDisplay(); // Get current percentage
-        updateElementText(summaryCourse, `${coursePercentage}%`);
+        // Course Summary - Call the function that calculates and updates the display
+        const coursePercentage = updateCourseProgressDisplay(); // This function updates its element and returns the value
+        updateElementText(summaryCourse, `${coursePercentage}%`); // Update the summary element specifically
 
-        // Pomodoro Summary
+        // Pomodoro Summary - Update with the current count
         updateElementText(summaryPomodoro, pomodorosToday);
+
          console.log("Dashboard summary updated.");
     }
 
@@ -541,74 +696,114 @@ document。addEventListener('DOMContentLoaded',() => {
 
     // --- Initialization ---
     function initialize() {
-        // Load all data first
-        loadTaskProgress(); // Includes updating phase bars
-        loadNotesData();
-        loadCourseData(); // Includes updating course bar
-        loadPomodoroSettings(); // Includes resetting timer display & loading today's count
+        console.log('Initializing Study Cockpit...');
 
-        // Update displays based on loaded data
-        updateCountdownDisplay();
-        updateDashboardSummary(); // Update summary after all data is loaded
+        // --- Load Data First ---
+        // Order matters slightly if one load depends on another (not really here)
+        loadTaskProgress();      // Loads checkbox states, updates phase bars & task summary part 1
+        loadNotesData();         // Loads text area content
+        loadCourseData();        // Loads course inputs/notes, updates course progress bar & summary part 1
+        loadPomodoroSettings();  // Loads durations, resets timer display, loads/resets daily count & summary part 1
 
-        // Set up interactions
-        updateCurrentTime(); // Initial time update
+        // --- Update Displays based on potentially cross-dependent data ---
+        updateCountdownDisplay(); // Update countdown timers
+        updateDashboardSummary(); // Final update for the dashboard summary after all data is loaded
+
+        // --- Set up recurring updates & initial states ---
+        updateCurrentTime();           // Set initial time
         setInterval(updateCurrentTime, 1000); // Update time every second
 
-        // Event Listeners
+        // Initialize SVG ring dash array/offset
+        updateTimerRing();
+
+        // Set initial button states for Pomodoro (should be handled by resetTimer in loadPomodoroSettings)
+        setButtonState(startButton, false);
+        setButtonState(pauseButton, true);
+        setButtonState(resetButton, true); // Initially enabled? Or disabled until started? Let's say enabled.
+
+
+        // --- Attach Event Listeners ---
+
+        // Sidebar Navigation
         sidebarNavLinks.forEach(link => {
             link.addEventListener('click', (e) => {
-                e.preventDefault();
+                e.preventDefault(); // Prevent default anchor link behavior
                 const targetId = link.dataset.target;
-                if (targetId) setActiveSection(targetId);
+                if (targetId) {
+                    setActiveSection(targetId);
+                } else {
+                    console.warn("Sidebar link clicked with no data-target:", link);
+                }
             });
         });
 
+        // Accordion Headers
         accordionHeaders.forEach(header => {
             header.addEventListener('click', () => toggleAccordion(header));
+             // Optional: Pre-open the first accordion item or based on saved state
+             // if (header.closest('.accordion-item').classList.contains('initially-open')) {
+             //    toggleAccordion(header);
+             // }
         });
 
+        // Task Checkboxes
         allCheckboxes.forEach(cb => {
             cb.addEventListener('change', () => {
-                updateLabelStyle(cb);
-                if (cb.dataset.group) updatePhaseProgressBar(cb.dataset.group);
-                saveTaskProgress(); // Save immediately on change
+                updateLabelStyle(cb); // Update visual style (e.g., strikethrough)
+                // Update progress bar *only if* the checkbox belongs to a group
+                if (cb.dataset.group) {
+                    updatePhaseProgressBar(cb.dataset.group);
+                }
+                saveTaskProgress(); // Save state and update dashboard summary
             });
         });
 
+        // Notes Textareas (Auto-save on input, ensure save on blur)
         noteTextareas.forEach(textarea => {
             textarea.addEventListener('input', () => {
                 saveSpecificNote(textarea); // Throttle save on input
             });
-             textarea.addEventListener('blur', () => { // Ensure save on blur
-                saveSpecificNote(textarea);
+             textarea.addEventListener('blur', () => { // Ensure data is saved when focus leaves
+                saveSpecificNote(textarea); // Should ideally trigger the throttled save if enough time passed or save immediately if needed
+                // Consider forcing a save here if throttle hasn't fired recently:
+                // saveData(config.localStorageKeys.notes, loadData(config.localStorageKeys.notes)); // Reload and save immediately
              });
         });
 
-         if (saveNotesButton) saveNotesButton.addEventListener('click', saveAllNotesNow);
+        // Manual Notes Save Button
+         if (saveNotesButton) {
+            saveNotesButton.addEventListener('click', saveAllNotesNow);
+         }
 
+        // Course Tracker Inputs (Save on change - typically blur or enter key)
         [courseTotalInput, courseCompletedInput].forEach(input => {
-             if(input) input.addEventListener('change', () => {
-                 updateCourseProgressDisplay();
-                 saveCourseData(); // Save on change (blur/enter)
-             });
+             if(input) { // Check if the element exists
+                 input.addEventListener('change', () => {
+                     updateCourseProgressDisplay(); // Update visuals first
+                     saveCourseData(); // Then save the new data (also updates summary)
+                 });
+                 // Optional: Update progress display on 'input' for immediate feedback, but save on 'change'
+                 // input.addEventListener('input', updateCourseProgressDisplay);
+             }
         });
 
+        // Pomodoro Timer Buttons
          if (startButton) startButton.addEventListener('click', startTimer);
          if (pauseButton) pauseButton.addEventListener('click', pauseTimer);
-         if (resetButton) resetButton.addEventListener('click', () => resetTimer(false));
+         if (resetButton) resetButton.addEventListener('click', () => resetTimer(false)); // Pass false for non-silent reset
 
+         // Pomodoro Duration Setting Inputs (Save on change)
          [workDurationInput, shortBreakDurationInput, longBreakDurationInput].forEach(input => {
-             if(input) input.addEventListener('change', savePomodoroSettings);
+             if(input) { // Check if element exists
+                input.addEventListener('change', savePomodoroSettings);
+             }
          });
 
-        // Activate initial section
-        setActiveSection('dashboard-section'); // Default to dashboard
+        // --- Final Steps ---
+        // Activate the initial section (e.g., dashboard)
+        setActiveSection('dashboard-section'); // Or load last active section from localStorage if implemented
 
-        // Ensure initial ring state is correct
-        updateTimerRing();
-
-        console.log('Study cockpit initialized for 段绪程.');
+        console.log('Study cockpit initialized successfully for 段绪程.');
     }
 
     // --- Run Initialization ---
